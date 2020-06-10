@@ -1,0 +1,5 @@
+* Usage
+** settings.py
+#+BEGIN_SRC python
+INSTALLED_APPS += 'django.contrib.sqlite3'
+#+END_SRC

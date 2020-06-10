@@ -17,6 +17,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     sql_create_inline_fk = "REFERENCES %(to_table)s (%(to_column)s) DEFERRABLE INITIALLY DEFERRED"
     sql_create_unique = "CREATE UNIQUE INDEX %(name)s ON %(table)s (%(columns)s)"
     sql_delete_unique = "DROP INDEX %(name)s"
+    sql_create_virtual_table = "CREATE VIRTUAL TABLE %(table)s USING %(extension)s(%(definition)s)"
 
     def __enter__(self):
         # Some SQLite schema alterations need foreign key constraints to be
@@ -427,3 +428,32 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             super().remove_constraint(model, constraint)
         else:
             self._remake_table(model)
+
+    def create_model(self, model):
+        """
+        Create a virtual table for the given `model` if fts is available and
+        required or calls super otherwise.
+        """
+        # import pdb;pdb.set_trace()
+        if 'fts5_enabled' in model._meta.required_db_features:
+            # TODO: Check for fts5_enabled in PRAGMAS
+            # PRAGMA compile_options;
+            # ENABLE_FTS3
+            # ENABLE_FTS3_PARENTHESIS
+            # ENABLE_FTS3_TOKENIZER
+            # ENABLE_FTS4
+            # ENABLE_FTS5
+            sql=self.sql_create_virtual_table % {
+                "extension":"fts5",
+                "table": self.quote_name(model._meta.db_table),
+                "definition": ", ".join(
+                    (
+                        field.name
+                        for field in model._meta.local_fields
+                        if not field.name in ("rank", "rowid",)
+                    )
+                ),
+            }
+            self.execute(sql)
+        else:
+            super().create_model(model)
