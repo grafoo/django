@@ -1,5 +1,6 @@
 from django.test import TestCase, modify_settings
 from .models import Breakfast
+from django.contrib.sqlite3.search import OrOperator as Or
 
 
 class SearchTest(TestCase):
@@ -25,6 +26,13 @@ class SearchTest(TestCase):
     def test_match(self):
         expected = self.breakfast_menu
         searched = Breakfast.objects.filter(ingredients__match="spam")
+        self.assertSequenceEqual(searched, expected)
+
+    def test_match_with_or_operator(self):
+        expected = self.breakfast_menu[-2:]
+        searched = Breakfast.objects.filter(
+            ingredients__match=Or("baked beans", "lobster",)
+        )
         self.assertSequenceEqual(searched, expected)
 
     def test_match_near_with_tuple(self):

@@ -85,6 +85,14 @@ class MatchNear(Match):
             super().__init__(lhs, "NEAR(%s)" % rhs)
 
 
+class OrOperator:
+    def __init__(self, *terms):
+        self.terms = terms
+
+    def __str__(self):
+        return " OR ".join('"%s"' % term for term in self.terms)
+
+
 class FTSTokenizerOptionField(models.Field):
     description = "Configure the specific tokenizer used by the FTS5 table"
     # TODO: Add check for tokenizer options
